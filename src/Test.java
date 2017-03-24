@@ -1,6 +1,4 @@
 import okhttp3.*;
-import okio.BufferedSink;
-
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -8,33 +6,30 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by zspmh on 2017-03-24.
- */
 public class Test {
-    private static final HashMap<String, List<Cookie>> cookieStore = new HashMap();
+    private static List<Cookie> cookieStore = new ArrayList<>();
 
     public static void main(String[] args) {
         //login("123", "123");
     }
 
-    public static void login(String _username, String _password) {
+    public static void login(String username, String password) {
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .cookieJar(new CookieJar() {
                     @Override
                     public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
-                        cookieStore.put("1", cookies);
+                        cookieStore = cookies;
                     }
 
                     @Override
                     public List<Cookie> loadForRequest(HttpUrl url) {
-                        List<Cookie> cookies = cookieStore.get("1");
+                        List<Cookie> cookies = cookieStore;
                         return cookies != null ? cookies : new ArrayList<Cookie>();
                     }
                 })
                 .build();
 
-
+        //获取登录链接
         Request request = new Request.Builder()
                 .url("http://www.msftconnecttest.com/redirect")
                 .build();
@@ -51,7 +46,7 @@ public class Test {
             return;
         }
 
-        //获取链接
+        //解析链接
         body = body.substring("<script>top.self.location.href='".length(), body.length() - "'</script>\r\n".length());
         String loginUrl = body.replaceFirst("http://10.255.1.1:8080/zportal/login", "http://10.255.1.1:8080/zportal/loginForWeb");
 
@@ -59,8 +54,6 @@ public class Test {
         request = new Request.Builder()
                 .url(body)
                 .build();
-        response = null;
-        body = null;
         try {
             response = okHttpClient.newCall(request).execute();
         } catch (IOException e) {
@@ -72,7 +65,7 @@ public class Test {
         Map<String, String> arg = urlArg(argString);
 
         //构造post数据
-        RequestBody req = RequestBody.create(MediaType.parse("application/x-www-form-urlencoded; charset=UTF-8"), "qrCodeId=请输入编号&username=" + _username + "&pwd=" + _password + "&validCode=验证码&validCodeFlag=false" + "&ssid=" + arg.get("ssid") + "&mac=" + arg.get("mac") + "&t=" + arg.get("t") + "&wlanacname=" + arg.get("wlanacname") + "&url=" + arg.get("url") + "&nasip=" + arg.get("nasip") + "&wlanuserip=" + arg.get("wlanuserip"));
+        RequestBody req = RequestBody.create(MediaType.parse("application/x-www-form-urlencoded; charset=UTF-8"), "qrCodeId=请输入编号&username=" + username + "&pwd=" + password + "&validCode=验证码&validCodeFlag=false" + "&ssid=" + arg.get("ssid") + "&mac=" + arg.get("mac") + "&t=" + arg.get("t") + "&wlanacname=" + arg.get("wlanacname") + "&url=" + arg.get("url") + "&nasip=" + arg.get("nasip") + "&wlanuserip=" + arg.get("wlanuserip"));
 
         //执行登录
         request = new Request.Builder()
@@ -85,15 +78,13 @@ public class Test {
                 .addHeader("Accept", "*/*")
                 .post(req)
                 .build();
-        response = null;
-        body = null;
         try {
             response = okHttpClient.newCall(request).execute();
             body = response.body().string();
             body = body.substring(body.indexOf("{\"message\":\"") + "{\"message\":\"".length(), body.indexOf("\",\"nextPage\""));
-            if(body.equals("")){
+            if (body.equals("")) {
                 System.out.println("登录成功");
-            }else{
+            } else {
                 System.out.println(body);
             }
 
@@ -101,7 +92,8 @@ public class Test {
             e.printStackTrace();
         }
     }
-    public static void logout(){
+
+    public static void logout() {
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .build();
         Request request = new Request.Builder()
